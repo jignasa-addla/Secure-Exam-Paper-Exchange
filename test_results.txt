@@ -1,0 +1,148 @@
+==============================================================================
+ SECURE EXAMINATION-PAPER EXCHANGE  --  simulation and test report
+ Run: 2026-10-29 14:51:50   Python 3.13.0
+==============================================================================
+
+SETUP  Generating RSA-4096 key pairs (sender, recipient, attacker) ...
+       done in 2.0 s
+[PASS] T0  Key generation: separate RSA-4096 pairs, private keys stored encrypted (0600)
+         sender   : 4096-bit RSA | private key file mode 0o666, passphrase-encrypted=True | pub fingerprint a3b99866d96e2b34377b1e5c...
+         recipient: 4096-bit RSA | private key file mode 0o666, passphrase-encrypted=True | pub fingerprint cf842bfafb7eeb7e275351de...
+         attacker : 4096-bit RSA | private key file mode 0o666, passphrase-encrypted=True | pub fingerprint 44f50b2e5d12cd5b5bda6a01...
+
+[PASS] T1  Authorised recipient recovers the original file
+         Original  : exam_paper_CS402.txt  3330 bytes  SHA-256 90dcf28816c2afa94c1ce6f3f926086f...
+         Package   : exam_paper_CS402.exampkg  6539 bytes  (package_id 764983c2-39fb-434d-a12b-7fe497601aa9)
+         Recovered : recipient\decrypted\exam_paper_CS402.txt  SHA-256 90dcf28816c2afa94c1ce6f3f926086f...
+         Byte-identical to original: True
+         Confidentiality check - exam text visible inside package: False
+
+[PASS] T2a  Attacker flips ONE bit of the ciphertext
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2b  Attacker edits metadata (original_filename)
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2c  Attacker edits metadata (created_utc timestamp)
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2d  Attacker flips ONE bit of the signature
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2e  Attacker flips ONE bit of the wrapped session key
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2f  Attacker flips ONE bit of the nonce
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2g  Attacker flips ONE bit of the GCM tag
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender.
+         Plaintext released: no
+
+[PASS] T2h  Attacker REPLACES the package with their own (validly encrypted + self-signed)
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender. The package declares a different sender key fingerprint than the trusted public key you supplied.
+         Plaintext released: no
+
+[PASS] T2i  GCM layer alone: flipped ciphertext bit (signature check bypassed)
+         Outcome : REJECTED with IntegrityError
+         Message : AES-GCM authentication FAILED: ciphertext, tag, nonce or metadata has been altered.
+         Plaintext released: no
+
+[PASS] T2j  GCM layer alone: edited metadata is caught via AAD (signature check bypassed)
+         Outcome : REJECTED with IntegrityError
+         Message : AES-GCM authentication FAILED: ciphertext, tag, nonce or metadata has been altered.
+         Plaintext released: no
+
+[PASS] T3a  Recipient decrypts with an INCORRECT private key (attacker's key)
+         Outcome : REJECTED with SessionKeyError
+         Message : Session-key recovery FAILED: this private key cannot decrypt the session key. This package was encrypted for a different recipient key (expected fingerprint cf842bfafb7eeb7e..., this key is 44f50b2e5d12cd5b...).
+         Plaintext released: no
+
+[PASS] T3b  Correct key file but WRONG passphrase -> private key cannot even be loaded
+         Outcome : REJECTED with KeyLoadError
+         Message : Cannot load private key 'C:\Users\JIGNASA\Downloads\secure_exam_workshop\secure_exam_workshop\simulation\recipient\keys\recipient_private.pem': wrong passphrase or corrupt key file.
+         Plaintext released: no
+
+[PASS] T4  Signature verification with an INCORRECT sender public key
+         Outcome : REJECTED with SignatureVerificationError
+         Message : Signature verification FAILED: the package was modified or was not signed by the trusted sender. The package declares a different sender key fingerprint than the trusted public key you supplied.
+         Plaintext released: no
+
+[PASS] T5  Same file encrypted twice produces different encrypted packages
+         nonce                 : run1 36ddf932e7f4ed124981...  run2 cc480e5f6fbf7a55789a...  DIFFERENT
+         encrypted_session_key : run1 69cdb49a754a44aecd8d...  run2 6c3bac5802df59ebec5a...  DIFFERENT
+         ciphertext            : run1 31e6e58ad43bed2e570b...  run2 3e236b82b946ad28ec2b...  DIFFERENT
+         tag                   : run1 510b783c76f0c7c00c8b...  run2 ed060805fb96c6417097...  DIFFERENT
+         signature             : run1 a54054183729061b6067...  run2 892f440aa8e96b72fad3...  DIFFERENT
+         whole package SHA-256 : run1 12af05ebcd774f942c46...  run2 89772b072a6e0b52c2e3...
+         Both packages decrypt to the same original paper: True
+
+[PASS] T6  Attacker REPLAYS the genuine package that was already accepted (T1)
+         Outcome : REJECTED with ReplayError
+         Message : Package was already accepted earlier (replay attempt rejected).
+         Plaintext released: no
+
+[PASS] T7  No plaintext was ever written by any rejected attempt
+         Contents of recipient/attack_attempts_output/: empty
+         Contents of recipient/decrypted/ (legitimate only): ['exam_paper_CS402.txt']
+
+==============================================================================
+ SUMMARY: 18/18 checks passed
+   PASS  T0   Key generation: separate RSA-4096 pairs, private keys stored encrypted (0600)
+   PASS  T1   Authorised recipient recovers the original file
+   PASS  T2a  Attacker flips ONE bit of the ciphertext
+   PASS  T2b  Attacker edits metadata (original_filename)
+   PASS  T2c  Attacker edits metadata (created_utc timestamp)
+   PASS  T2d  Attacker flips ONE bit of the signature
+   PASS  T2e  Attacker flips ONE bit of the wrapped session key
+   PASS  T2f  Attacker flips ONE bit of the nonce
+   PASS  T2g  Attacker flips ONE bit of the GCM tag
+   PASS  T2h  Attacker REPLACES the package with their own (validly encrypted + self-signed)
+   PASS  T2i  GCM layer alone: flipped ciphertext bit (signature check bypassed)
+   PASS  T2j  GCM layer alone: edited metadata is caught via AAD (signature check bypassed)
+   PASS  T3a  Recipient decrypts with an INCORRECT private key (attacker's key)
+   PASS  T3b  Correct key file but WRONG passphrase -> private key cannot even be loaded
+   PASS  T4   Signature verification with an INCORRECT sender public key
+   PASS  T5   Same file encrypted twice produces different encrypted packages
+   PASS  T6   Attacker REPLAYS the genuine package that was already accepted (T1)
+   PASS  T7   No plaintext was ever written by any rejected attempt
+==============================================================================
+
+Simulation folder contents (private keys are demo keys, passphrase-encrypted):
+   attacker\keys\attacker_private.pem                                3,446 bytes
+   attacker\keys\attacker_public.pem                                   800 bytes
+   attacker\known\recipient_public.pem                                 800 bytes
+   channel\exam_paper_CS402.exampkg                                  6,539 bytes
+   channel\exam_paper_CS402_encryption1.exampkg                      6,539 bytes
+   channel\exam_paper_CS402_encryption2.exampkg                      6,539 bytes
+   channel\forged_by_attacker.exampkg                                2,161 bytes
+   channel\tampered_ciphertext.exampkg                               6,539 bytes
+   channel\tampered_metadata_filename.exampkg                        6,540 bytes
+   channel\tampered_metadata_time.exampkg                            6,539 bytes
+   channel\tampered_nonce.exampkg                                    6,539 bytes
+   channel\tampered_session_key.exampkg                              6,539 bytes
+   channel\tampered_signature.exampkg                                6,539 bytes
+   channel\tampered_tag.exampkg                                      6,539 bytes
+   recipient\decrypted\exam_paper_CS402.txt                          3,330 bytes
+   recipient\keys\recipient_private.pem                              3,446 bytes
+   recipient\keys\recipient_public.pem                                 800 bytes
+   recipient\replay_ledger.json                                         44 bytes
+   recipient\trusted\sender_public.pem                                 800 bytes
+   sender\exam_paper_CS402.txt                                       3,330 bytes
+   sender\keys\sender_private.pem                                    3,446 bytes
+   sender\keys\sender_public.pem                                       800 bytes
+   sender\trusted\recipient_public.pem                                 800 bytes
