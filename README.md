@@ -66,26 +66,25 @@ sequenceDiagram
     participant S as Faculty (Sender)
     participant C as Untrusted channel / Attacker
     participant R as Coordinator (Recipient)
-    Note over S,R: Setup: RSA-4096 pairs generated; public keys exchanged over a TRUSTED channel
+    Note over S,R: Setup: RSA-4096 key pairs generated; public keys exchanged over a trusted channel
     S->>S: Generate fresh AES-256 key K and 96-bit nonce N
-    S->>S: AES-256-GCM encrypt paper (AAD = metadata) -> C, tag T
-    S->>S: RSA-OAEP(SHA-256) wrap K with R_pub -> EK
-    S->>S: RSA-PSS(SHA-256) sign {metadata, EK, N, C, T} with S_priv -> SIG
-    S->>C: package.exampkg
-    C->>R: package.exampkg (genuine or tampered)
-    R->>R: Verify SIG with trusted S_pub
-    alt signature invalid
-        R-->>R: REJECT (no plaintext)
+    S->>S: Encrypt paper using AES-256-GCM with metadata as AAD
+    S->>S: Wrap K using RSA-OAEP with SHA-256 and R public key
+    S->>S: Sign package using RSA-PSS with SHA-256 and S private key
+    S->>C: Send encrypted package
+    C->>R: Forward package (genuine or tampered)
+    R->>R: Verify signature using trusted sender public key
+    alt Signature invalid
+        R-->>R: Reject package; do not release plaintext
+    else Signature valid
+        R->>R: Unwrap K using RSA-OAEP and recipient private key
+        R->>R: Decrypt and authenticate using AES-256-GCM
+        alt Authentication fails
+            R-->>R: Reject package; do not release plaintext
+        else Authentication succeeds
+            R-->>R: Release original examination paper
+        end
     end
-    R->>R: Unwrap K with R_priv (RSA-OAEP)
-    alt wrong key
-        R-->>R: REJECT (no plaintext)
-    end
-    R->>R: AES-GCM decrypt + verify tag T
-    alt tag invalid
-        R-->>R: REJECT (no plaintext)
-    end
-    R->>R: Release plaintext
 ```
 
 ## How the three security properties are provided
