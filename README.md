@@ -60,32 +60,6 @@ missing fields are rejected. The metadata is *also* the GCM AAD, so it is protec
 
 ![Sequence diagram](sequence_diagram.png)
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant S as Faculty (Sender)
-    participant C as Untrusted channel / Attacker
-    participant R as Coordinator (Recipient)
-    Note over S,R: Setup: RSA-4096 key pairs generated; public keys exchanged over a trusted channel
-    S->>S: Generate fresh AES-256 key K and 96-bit nonce N
-    S->>S: Encrypt paper using AES-256-GCM with metadata as AAD
-    S->>S: Wrap K using RSA-OAEP with SHA-256 and R public key
-    S->>S: Sign package using RSA-PSS with SHA-256 and S private key
-    S->>C: Send encrypted package
-    C->>R: Forward package (genuine or tampered)
-    R->>R: Verify signature using trusted sender public key
-    alt Signature invalid
-        R-->>R: Reject package; do not release plaintext
-    else Signature valid
-        R->>R: Unwrap K using RSA-OAEP and recipient private key
-        R->>R: Decrypt and authenticate using AES-256-GCM
-        alt Authentication fails
-            R-->>R: Reject package; do not release plaintext
-        else Authentication succeeds
-            R-->>R: Release original examination paper
-        end
-    end
-```
 
 ## How the three security properties are provided
 
